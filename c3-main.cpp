@@ -99,6 +99,8 @@ void drawCar(Pose pose, int num, Color color, double alpha, pcl::visualization::
 	renderBox(viewer, box, num, color, alpha);
 }
 
+// Declare the function to use the ICP algorithm with some predefined parameters.
+// This algorithm matches the scan cloud with the corresponding cloud points in the map cloud and finds the corresponding transform matrix.
 Eigen::Matrix4d ICP(PointCloudT::Ptr target, PointCloudT::Ptr source, Pose startingPose) {
     Eigen::Matrix4d transformation_matrix = Eigen::Matrix4d::Identity ();
     Eigen::Matrix4d initTransform = transform3D(startingPose.rotation.yaw, startingPose.rotation.pitch, startingPose.rotation.roll, startingPose.position.x, startingPose.position.y, startingPose.position.z);
@@ -113,6 +115,10 @@ Eigen::Matrix4d ICP(PointCloudT::Ptr target, PointCloudT::Ptr source, Pose start
     icp.setMaximumIterations(iterations);
     icp.setInputSource(transformSource);
     icp.setInputTarget(target);
+    //icp.setMaxCorrespondenceDistance(20); //15); //8); //2);
+    //icp.setTransformationEpsilon(0.001);
+    //icp.setEuclideanFitnessEpsilon(0.00001); //.05);
+    //icp.setRANSACOutlierRejectionThreshold (10);
 
     PointCloudT::Ptr cloud_icp (new PointCloudT);  // ICP output point cloud
     icp.align(*cloud_icp);
@@ -126,6 +132,8 @@ Eigen::Matrix4d ICP(PointCloudT::Ptr target, PointCloudT::Ptr source, Pose start
     return transformation_matrix;
 }
 
+// Declare the function to use the NDT algorithm with some predefined parameters.
+// This algorithm matches the scan cloud with the corresponding cloud points in the map cloud and finds the corresponding transform matrix.
 Eigen::Matrix4d NDT(PointCloudT::Ptr mapCloud, PointCloudT::Ptr source, Pose startingPose) {
     pcl::NormalDistributionsTransform<pcl::PointXYZ, pcl::PointXYZ> ndt;
     // Setting minimum transformation difference for termination condition.
@@ -153,6 +161,7 @@ Eigen::Matrix4d NDT(PointCloudT::Ptr mapCloud, PointCloudT::Ptr source, Pose sta
     return transformation_matrix;
 }
 
+// Prints the transform matrix.
 void print_transform(Eigen::Matrix4d transform) {
  for(int i = 0; i < 4; i++) {
   for(int j = 0; j < 4; j++) {
@@ -163,12 +172,11 @@ void print_transform(Eigen::Matrix4d transform) {
  printf("\n");
 }
 
-
 int main(int argc, char *argv[]) {
         // Declare the variable USE_NDT. Its default value is true.
-        bool USE_NDT = true;
+        int USE_NDT = 1;
         // Use the ICP algorithm only if we execute the command "./cloud_loc 2"
-        if(argc == 2 && strcmp(argv[1], "2") == 0) USE_NDT = false;
+        if(argc == 2 && strcmp(argv[1], "2") == 0) USE_NDT = 0;
         // Print the matching algorithm we will use.
         printf("\n%s\n\n", USE_NDT ? "Using Algorithm 1: Normal Distributions Transform (NDT)" : "Using Algorithm 2: Iterative Closest Point (ICP)");
         // Declare the variable number of scans.
